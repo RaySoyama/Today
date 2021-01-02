@@ -3,14 +3,14 @@ using UnityEngine;
 
 public class TodayManager : MonoBehaviour
 {
-    private static TodayManager instnace = null;
+    private static TodayManager instance = null;
     public static TodayManager Instance
     {
         get
         {
-            QDebug.IsNull(instnace, "TodayManager Instance", null, QDebug.Severity.OhGodWhy);
+            QDebug.IsNull(instance, "TodayManager Instance", null, QDebug.Severity.OhGodWhy);
 
-            return instnace;
+            return instance;
         }
     }
 
@@ -31,13 +31,19 @@ public class TodayManager : MonoBehaviour
 
     [Space(20), SerializeField]
     private TodayData todayData = null;
-
+    public TodayData TodayData
+    {
+        get
+        {
+            return todayData;
+        }
+    }
 
     void Awake()
     {
-        if (instnace == null)
+        if (instance == null)
         {
-            instnace = this;
+            instance = this;
         }
         else
         {
@@ -67,6 +73,38 @@ public class TodayManager : MonoBehaviour
     }
     public void SaveTodayData()
     {
+        DataIOManager.Instance.SetTodayData(todayData);
+    }
+
+    public void AddCaffeineData(TodayData.CaffeineType type)
+    {
+        todayData.caffeineData.Add(type);
+        DataIOManager.Instance.SetTodayData(todayData);
+    }
+    public void DeleteCaffeineData(TodayData.CaffeineType type, int index)
+    {
+        //check if index in bounds
+        if (index >= 0 && index < todayData.caffeineData.Count && todayData.caffeineData[index] == type)
+        {
+            todayData.caffeineData.RemoveAt(index);
+            DataIOManager.Instance.SetTodayData(todayData);
+        }
+        else
+        {
+            //error
+            Debug.LogError("Trying to remove invalid Caffeine Data");
+        }
+    }
+
+    public void SetMotivationValue(float val)
+    {
+        todayData.motivation = (int)val;
+        DataIOManager.Instance.SetTodayData(todayData);
+    }
+
+    public void SetHappinessValue(float val)
+    {
+        todayData.happiness = (int)val;
         DataIOManager.Instance.SetTodayData(todayData);
     }
 }
