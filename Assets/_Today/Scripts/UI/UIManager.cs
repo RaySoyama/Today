@@ -29,14 +29,14 @@ public class UIManager : MonoBehaviour
     [SerializeField]
     private Slider happinessSlider = null;
 
+    [SerializeField]
+    private RawImage todaysImage = null;
 
+    [SerializeField]
+    private AspectRatioFitter todaysImageAspectFitter = null;
 
-
-
-
-
-
-
+    [SerializeField]
+    private TMP_InputField todaysDiaryInputFeild = null;
 
 
     [SerializeField]
@@ -51,6 +51,10 @@ public class UIManager : MonoBehaviour
     [SerializeField]
     private GameObject caffeineKeyPrefab = null;
 
+    [Header("Cache")]
+
+    [SerializeField, ReadOnlyField]
+    private Texture2D todaysImageTexture = null;
 
 
     void Awake()
@@ -77,10 +81,13 @@ public class UIManager : MonoBehaviour
             happinessSlider.onValueChanged.AddListener(TodayManager.Instance.SetHappinessValue);
         }
 
-        InitializeUI();
+        if (QDebug.IsNull(todaysDiaryInputFeild, nameof(todaysDiaryInputFeild), this) == false)
+        {
+            todaysDiaryInputFeild.onEndEdit.AddListener(TodayManager.Instance.OnDiaryEntry);
+        }
     }
 
-    void InitializeUI()
+    public void InitializeUI()
     {
         if (QDebug.IsNull(activeDateText, nameof(activeDateText), this) == false)
         {
@@ -133,6 +140,16 @@ public class UIManager : MonoBehaviour
         {
             happinessSlider.value = TodayManager.Instance.TodayData.happiness;
         }
+
+
+        if (QDebug.IsNull(todaysDiaryInputFeild, nameof(todaysDiaryInputFeild), this) == false)
+        {
+            todaysDiaryInputFeild.SetTextWithoutNotify(TodayManager.Instance.TodayData.diary);
+        }
+
+
+
+
     }
     public void AddCaffeineData(int type)
     {
@@ -159,6 +176,19 @@ public class UIManager : MonoBehaviour
 
         TodayManager.Instance.DeleteCaffeineData(key.CaffeineKeyType, key.Index);
     }
-
-
+    public void SetTodaysImage(bool isDefault)
+    {
+        if (isDefault == true)
+        {
+            todaysImage.texture = null;
+            todaysImageAspectFitter.aspectRatio = 16.0f / 9.0f;
+        }
+        else
+        {
+            todaysImageTexture = new Texture2D(1, 1);
+            todaysImageTexture.LoadImage(TodayManager.Instance.TodaysImage);
+            todaysImage.texture = todaysImageTexture;
+            todaysImageAspectFitter.aspectRatio = (float)todaysImageTexture.width / (float)todaysImageTexture.height;
+        }
+    }
 }

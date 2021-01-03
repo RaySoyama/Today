@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using SFB;
 using System;
 using System.IO;
 using UnityEngine;
@@ -136,7 +137,7 @@ public class DataIOManager : MonoBehaviour
     }
     private string ValidateDataDirectory(DateTime dateTime)
     {
-        string path = dataRootPath + "\\" + dataFolderName + "\\" + dateTime.Year + "\\" + dateTime.ToString("MM - MMMM");
+        string path = dataRootPath + "\\" + dataFolderName + "\\" + dateTime.Year + "\\" + dateTime.ToString("M - MMMM") + "\\" + dateTime.ToString("d - MMMM");
 
         if (Directory.Exists(path) == false)
         {
@@ -159,6 +160,55 @@ public class DataIOManager : MonoBehaviour
 
         return path;
     }
+
+
+    public byte[] GetTodayImageData(DateTime dateTime)
+    {
+        if (ValidateImageFile(dateTime, out string path) == false) //no img found
+        {
+            return null;
+        }
+
+        return File.ReadAllBytes(path);
+    }
+    public byte[] SetNewTodayImageData(DateTime dateTime)
+    {
+        var extensions = new[] {
+            new ExtensionFilter("Image Files", "png", "jpg" )};
+
+        var paths = StandaloneFileBrowser.OpenFilePanel("Open File", "", extensions, false);
+
+        if (paths.Length == 0)
+        {
+            Debug.Log("No File Selected");
+            return null;
+        }
+        else
+        {
+            string localPath = ValidateDataDirectory(dateTime) + "\\" + dateTime.ToString("d").Replace("/", "-") + ".png";
+
+            FileStream localImageFile = File.Create(localPath);
+            localImageFile.Close();
+
+            File.WriteAllBytes(localPath, File.ReadAllBytes(paths[0]));
+
+            return File.ReadAllBytes(paths[0]);
+        }
+    }
+    private bool ValidateImageFile(DateTime dateTime, out string path)
+    {
+        path = ValidateDataDirectory(dateTime) + "\\" + dateTime.ToString("d").Replace("/", "-") + ".png";
+
+        if (File.Exists(path) == false)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
     public void OpenDataFolder()
     {
         string path = dataRootPath + "\\" + dataFolderName;

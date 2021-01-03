@@ -39,6 +39,17 @@ public class TodayManager : MonoBehaviour
         }
     }
 
+    private byte[] todaysImage;
+    public byte[] TodaysImage
+    {
+        get
+        {
+            return todaysImage;
+        }
+    }
+
+
+
     void Awake()
     {
         if (instance == null)
@@ -56,7 +67,11 @@ public class TodayManager : MonoBehaviour
         targetDate = DateTime.Now;
         targetDateString = targetDate.ToString("d");
 
+        InitializeTodayData();
+    }
 
+    private void InitializeTodayData()
+    {
         todayData = DataIOManager.Instance.GetTodayData(targetDate);
 
         if (todayData == null)
@@ -64,13 +79,27 @@ public class TodayManager : MonoBehaviour
             todayData = new TodayData(DateTime.Now);
             DataIOManager.Instance.SetTodayData(todayData);
         }
+
+        todaysImage = DataIOManager.Instance.GetTodayImageData(targetDate);
+
+        if (todaysImage == null)
+        {
+            UIManager.instance.SetTodaysImage(true);
+        }
+        else
+        {
+            UIManager.instance.SetTodaysImage(false);
+        }
+
+        UIManager.instance.InitializeUI();
     }
 
     public void GetTodayData()
     {
         targetDate = DateTime.Parse(targetDateString);
-        todayData = DataIOManager.Instance.GetTodayData(targetDate);
+        InitializeTodayData();
     }
+
     public void SaveTodayData()
     {
         DataIOManager.Instance.SetTodayData(todayData);
@@ -101,10 +130,54 @@ public class TodayManager : MonoBehaviour
         todayData.motivation = (int)val;
         DataIOManager.Instance.SetTodayData(todayData);
     }
-
     public void SetHappinessValue(float val)
     {
         todayData.happiness = (int)val;
         DataIOManager.Instance.SetTodayData(todayData);
     }
+
+
+    //Button Area
+    public void OnUserSelectTodaysImage()
+    {
+        todaysImage = DataIOManager.Instance.SetNewTodayImageData(targetDate);
+
+        if (todaysImage == null)
+        {
+            //really garbage but eh.
+            //if no image selected, see if theres already a default image saved
+
+            todaysImage = DataIOManager.Instance.GetTodayImageData(targetDate);
+
+            if (todaysImage == null)
+            {
+                UIManager.instance.SetTodaysImage(true);
+            }
+            else
+            {
+                UIManager.instance.SetTodaysImage(false);
+            }
+        }
+        else
+        {
+            UIManager.instance.SetTodaysImage(false);
+        }
+    }
+    public void OnLoadYesterday()
+    {
+        targetDate = targetDate.AddDays(-1);
+        InitializeTodayData();
+    }
+    public void OnLoadTomorrow()
+    {
+        targetDate = targetDate.AddDays(1);
+        InitializeTodayData();
+    }
+
+    public void OnDiaryEntry(string text)
+    {
+        todayData.diary = text;
+        DataIOManager.Instance.SetTodayData(todayData);
+    }
+
 }
