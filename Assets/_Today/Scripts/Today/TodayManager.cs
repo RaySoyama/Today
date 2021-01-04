@@ -170,6 +170,12 @@ public class TodayManager : MonoBehaviour
     }
     public void OnLoadTomorrow()
     {
+        if (DateTime.Now.Date < targetDate.AddDays(1).Date)
+        {
+            //Can't load into the future
+            return;
+        }
+
         targetDate = targetDate.AddDays(1);
         InitializeTodayData();
     }
@@ -177,6 +183,12 @@ public class TodayManager : MonoBehaviour
     public void OnDiaryEntry(string text)
     {
         todayData.diary = text;
+        DataIOManager.Instance.SetTodayData(todayData);
+    }
+
+    public void OnGOTDUpdate(string title)
+    {
+        todayData.gameOfTheDay = title;
         DataIOManager.Instance.SetTodayData(todayData);
     }
 

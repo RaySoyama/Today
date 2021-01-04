@@ -28,6 +28,11 @@ public class UIManager : MonoBehaviour
 
     [SerializeField]
     private Slider happinessSlider = null;
+    [SerializeField]
+    private TMP_InputField todaysDiaryInputFeild = null;
+
+
+    [Header("Todays Image")]
 
     [SerializeField]
     private RawImage todaysImage = null;
@@ -36,8 +41,19 @@ public class UIManager : MonoBehaviour
     private AspectRatioFitter todaysImageAspectFitter = null;
 
     [SerializeField]
-    private TMP_InputField todaysDiaryInputFeild = null;
+    private Color noImageColor;
 
+    [SerializeField]
+    private GameObject todayImageExpandedParent = null;
+
+    [SerializeField]
+    private RawImage todayImageExpanded = null;
+
+    [SerializeField]
+    private AspectRatioFitter todaysImageExpandedAspectFitter = null;
+
+
+    [Header("Caffeine")]
 
     [SerializeField]
     private GameObject caffeineKeyParent = null;
@@ -45,6 +61,21 @@ public class UIManager : MonoBehaviour
     [SerializeField, ReadOnlyField]
     private List<CaffeineKey> allCaffeineKeys = new List<CaffeineKey>();
 
+    [Header("GOTD")]
+
+    [SerializeField]
+    private TMP_Dropdown gameOfDayDropdown = null;
+
+    [SerializeField]
+    private TMP_InputField newGameTitleInputField = null;
+
+    [Header("Other")]
+    [SerializeField]
+    private TextMeshProUGUI versionText = null;
+
+    [SerializeField, Min(0.0f)]
+    float doubleTapTime = 0.5f;
+    float tapTimestamp = 0;
 
     //Prefab Ref
     [Header("Prefab Refs"), Space(10)]
@@ -84,6 +115,26 @@ public class UIManager : MonoBehaviour
         if (QDebug.IsNull(todaysDiaryInputFeild, nameof(todaysDiaryInputFeild), this) == false)
         {
             todaysDiaryInputFeild.onEndEdit.AddListener(TodayManager.Instance.OnDiaryEntry);
+        }
+
+        if (QDebug.IsNull(gameOfDayDropdown, nameof(gameOfDayDropdown), this) == false)
+        {
+            gameOfDayDropdown.onValueChanged.AddListener(OnGOTDUpdate);
+        }
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (Time.time - tapTimestamp < doubleTapTime) // double tap
+            {
+                OnQuit();
+            }
+            else
+            {
+                tapTimestamp = Time.time;
+            }
         }
     }
 
@@ -147,9 +198,31 @@ public class UIManager : MonoBehaviour
             todaysDiaryInputFeild.SetTextWithoutNotify(TodayManager.Instance.TodayData.diary);
         }
 
+        if (QDebug.IsNull(gameOfDayDropdown, nameof(gameOfDayDropdown), this) == false)
+        {
+            gameOfDayDropdown.ClearOptions();
+            gameOfDayDropdown.AddOptions(SettingsManager.Instance.SettingsData.gameOfDayTitles);
+
+            if (SettingsManager.Instance.SettingsData.gameOfDayTitles.Contains(TodayManager.Instance.TodayData.gameOfTheDay) == false)
+            {
+                //wtf. add the game I guess?
+                SettingsManager.Instance.AddNewGameOfDayTitle(TodayManager.Instance.TodayData.gameOfTheDay);
+
+                if (QDebug.IsNull(gameOfDayDropdown, nameof(gameOfDayDropdown), this) == false)
+                {
+                    gameOfDayDropdown.ClearOptions();
+                    gameOfDayDropdown.AddOptions(SettingsManager.Instance.SettingsData.gameOfDayTitles);
+                }
+            }
+
+            gameOfDayDropdown.value = SettingsManager.Instance.SettingsData.gameOfDayTitles.IndexOf(TodayManager.Instance.TodayData.gameOfTheDay);
+        }
 
 
-
+        if (QDebug.IsNull(versionText, nameof(versionText), this) == false)
+        {
+            versionText.text = $"Build v{Application.version} Data v{TodayManager.Instance.TodayData.version}";
+        }
     }
     public void AddCaffeineData(int type)
     {
@@ -181,14 +254,68 @@ public class UIManager : MonoBehaviour
         if (isDefault == true)
         {
             todaysImage.texture = null;
+            todaysImage.color = noImageColor;
             todaysImageAspectFitter.aspectRatio = 16.0f / 9.0f;
+
+            todayImageExpanded.texture = null;
+            todaysImageExpandedAspectFitter.aspectRatio = 16.0f / 9.0f;
         }
         else
         {
             todaysImageTexture = new Texture2D(1, 1);
             todaysImageTexture.LoadImage(TodayManager.Instance.TodaysImage);
+
             todaysImage.texture = todaysImageTexture;
+            todaysImage.color = Color.white;
             todaysImageAspectFitter.aspectRatio = (float)todaysImageTexture.width / (float)todaysImageTexture.height;
+
+            todayImageExpanded.texture = todaysImageTexture;
+            todaysImageExpandedAspectFitter.aspectRatio = (float)todaysImageTexture.width / (float)todaysImageTexture.height;
+
         }
+    }
+    public void ToggleTodayImageExpand(bool expand)
+    {
+        if (todaysImage.texture == null)
+        {
+            //this can soft locK?
+            return;
+        }
+
+        todayImageExpandedParent.SetActive(expand);
+    }
+
+    public void AddNewGameTile()
+    {
+        if (newGameTitleInputField.text == "" || SettingsManager.Instance.SettingsData.gameOfDayTitles.Contains(newGameTitleInputField.text))
+        {
+            return;
+        }
+        //add to list
+        SettingsManager.Instance.AddNewGameOfDayTitle(newGameTitleInputField.text);
+
+        if (QDebug.IsNull(gameOfDayDropdown, nameof(gameOfDayDropdown), this) == false)
+        {
+            gameOfDayDropdown.ClearOptions();
+            gameOfDayDropdown.AddOptions(SettingsManager.Instance.SettingsData.gameOfDayTitles);
+
+            gameOfDayDropdown.value = SettingsManager.Instance.SettingsData.gameOfDayTitles.IndexOf(newGameTitleInputField.text);
+        }
+
+        newGameTitleInputField.text = "";
+    }
+    public void OnGOTDUpdate(int value)
+    {
+        //cringe but just relay event call
+        TodayManager.Instance.OnGOTDUpdate(gameOfDayDropdown.options[value].text);
+    }
+
+
+    public void OnQuit()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#endif
+        Application.Quit();
     }
 }
