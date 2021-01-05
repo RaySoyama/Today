@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using SFB;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
@@ -53,10 +54,6 @@ public class DataIOManager : MonoBehaviour
         {
             dataRootPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
         }
-
-
-        //load other files
-
     }
 
 
@@ -160,6 +157,52 @@ public class DataIOManager : MonoBehaviour
 
         return path;
     }
+    public List<TodayData> GetYearData()
+    {
+        List<TodayData> yearData = new List<TodayData>();
+
+
+        DateTime startDate = new DateTime(DateTime.Now.Year, 1, 1);
+        DateTime endDate = new DateTime(DateTime.Now.Year, 12, 31);
+
+        for (DateTime date = startDate; date <= endDate; date = date.AddDays(1))
+        {
+            string path = dataRootPath + "\\" + dataFolderName + "\\" + date.Year + "\\" + date.ToString("M - MMMM") + "\\" + date.ToString("d - MMMM") + "\\" + date.ToString("d").Replace("/", "-") + ".Today"; ;
+
+            if (File.Exists(path) == false)
+            {
+                continue;
+            }
+            else
+            {
+                TodayData data = JsonConvert.DeserializeObject<TodayData>(File.ReadAllText(path));
+
+                if (data == null)
+                {
+                    continue;
+                }
+                else
+                {
+                    yearData.Add(data);
+                }
+            }
+        }
+
+        String log = "TodayData Collected for\n";
+        foreach (TodayData todayData in yearData)
+        {
+            log += $"{todayData.timestamp.ToString("d - MMMM")}\n";
+        }
+
+        Debug.Log(log);
+
+        string yearDataPath = dataRootPath + "\\" + dataFolderName + "\\" + DateTime.Now.Year + "\\" + "YearData.Today";
+        var myFile = File.Create(yearDataPath);
+        myFile.Close();
+        File.WriteAllText(yearDataPath, JsonConvert.SerializeObject(yearData, Formatting.Indented));
+
+        return yearData;
+    }
 
 
     public byte[] GetTodayImageData(DateTime dateTime)
@@ -208,7 +251,6 @@ public class DataIOManager : MonoBehaviour
             return true;
         }
     }
-
     public void OpenDataFolder()
     {
         string path = dataRootPath + "\\" + dataFolderName;
